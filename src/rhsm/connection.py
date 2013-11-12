@@ -37,6 +37,11 @@ from version import Versions
 from rhsm import ourjson as json
 from rhsm.utils import get_env_proxy_info
 
+import gio
+import gio.unix
+import glib
+import gobject
+
 # on EL5, there is a really long socket timeout. The
 # best thing we can do is set a process wide default socket timeout.
 # Limit this to affected python versions only, just to minimize any
@@ -461,6 +466,7 @@ class Restlib(object):
         else:
             conn = httpslib.HTTPSConnection(self.host, self.ssl_port, ssl_context=context)
 
+
         if info is not None:
             body = json.dumps(info, default=json.encode)
         else:
@@ -480,9 +486,65 @@ class Restlib(object):
                 if not id_cert.is_valid():
                     raise ExpiredIdentityCertException()
             raise
+
+        loop = gobject.MainLoop()
+        # need to make a HttpConnection that can return a response object
+        # that knows how to use the mainloop and/or GIO.
+        #
+        # We should be able to make the requests connections fileno an
+        # unix.InputStream, and let mainloop take care of the rest
+
+        def callback(stream, result, user_data=None):
+            print
+            print
+            print "stream", stream, stream.has_pending()
+            print "result", result
+            print dir(result)
+            res_bool = result.get_op_res_gboolean()
+            print "result res", res_bool
+            res_size = result.get_op_res_gssize()
+            result.complete_in_idle()
+            print "result size", res_size
+            print "user_data", user_data
+            try:
+                print "run read_finish"
+                data = stream.read_finish(result)
+                print "done read_finish"
+                #stream.close()
+                print "data", data
+                print "user_data1", user_data
+                user_data = user_data + data
+                print "user_data2", user_data
+            finally:
+                loop.quit()
+
+        # this will need to  return a gobject/mainloop/gio aware http response
         response = conn.getresponse()
+        print "conn", conn, conn.sock
+        print "response", response, response.fp
+        response.fp._sock.setblocking(0)
+        gis = gio.unix.InputStream(response.fp.fileno(), True)
+        print "gis", gis
+
+
+        buf = "___"
+        read_res = gis.read_async(4096, callback, user_data=buf)
+        print "read_res", read_res
+
+        print "has_pending", gis.has_pending()
+        loop.run()
+        #ctx = loop.get_context()
+        #while gis.has_pending():
+        #    ctx.iteration()
+        #while ctx.pending():
+        #    ctx.iteration()
+
+
+
+        print "buf", buf
         result = {
-            "content": response.read(),
+            # .read can wrap a mainloop till we hit finish callback?
+            "content": buf,
             "status": response.status,
         }
         response_log = 'Response: status=' + str(result['status'])
