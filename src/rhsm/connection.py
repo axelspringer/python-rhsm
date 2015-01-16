@@ -485,6 +485,11 @@ class Restlib(object):
             "content": response.read(),
             "status": response.status,
         }
+
+        import pprint
+        log.debug(pprint.pformat(response.getheaders()))
+        log.debug(result)
+
         response_log = 'Response: status=' + str(result['status'])
         if response.getheader('x-candlepin-request-uuid'):
             response_log = "%s, requestUuid=%s" % (response_log,
@@ -504,7 +509,9 @@ class Restlib(object):
         if not len(result['content']):
             return None
 
-        return json.loads(result['content'], object_hook=self._decode_dict)
+        decoded = json.loads(result['content'], object_hook=self._decode_dict)
+        log.debug(json.dumps(decoded, indent=4))
+        return decoded
 
     def validateResponse(self, response, request_type=None, handler=None):
 
