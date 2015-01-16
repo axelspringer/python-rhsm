@@ -488,7 +488,9 @@ class Restlib(object):
 
         import pprint
         log.debug(pprint.pformat(response.getheaders()))
-        log.debug(result)
+        log.debug("result")
+        log.debug(result['status'])
+        log.debug(result['content'])
 
         response_log = 'Response: status=' + str(result['status'])
         if response.getheader('x-candlepin-request-uuid'):
