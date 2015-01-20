@@ -512,7 +512,7 @@ class Restlib(object):
             return None
 
         decoded = json.loads(result['content'], object_hook=self._decode_dict)
-        log.debug(json.dumps(decoded, indent=4))
+#        log.debug(json.dumps(decoded, indent=4))
         return decoded
 
     def validateResponse(self, response, request_type=None, handler=None):
