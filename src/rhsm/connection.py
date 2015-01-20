@@ -487,8 +487,8 @@ class Restlib(object):
         }
 
         import pprint
-        log.debug(pprint.pformat(response.getheaders()))
-        log.debug("result")
+        #log.debug(pprint.pformat(response.getheaders()))
+        #log.debug("result")
         #log.debug(result['status'])
         #log.debug(result['content'])
 
