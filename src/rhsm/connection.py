@@ -467,6 +467,7 @@ class Restlib(object):
             body = None
 
         log.debug("Making request: %s %s" % (request_type, handler))
+        print "     %s %s:%s/%s" % (request_type, self.host, self.ssl_port, handler)
 
         headers = self.headers
         if body is None:
