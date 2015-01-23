@@ -469,7 +469,7 @@ class Restlib(object):
 
         log.debug("Making request: %s %s" % (request_type, handler))
         print "     %s %s:%s/%s" % (request_type, self.host, self.ssl_port, handler)
-        print traceback.format_stack()
+        traceback.print_stack()
         print
 
         headers = self.headers
