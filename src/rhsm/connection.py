@@ -24,6 +24,7 @@ import os
 import socket
 import sys
 import urllib
+import traceback
 
 from M2Crypto import SSL, httpslib
 from M2Crypto.SSL import SSLError
@@ -468,6 +469,8 @@ class Restlib(object):
 
         log.debug("Making request: %s %s" % (request_type, handler))
         print "     %s %s:%s/%s" % (request_type, self.host, self.ssl_port, handler)
+        print traceback.format_stack()
+        print
 
         headers = self.headers
         if body is None:
