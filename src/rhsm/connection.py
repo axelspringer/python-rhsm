@@ -378,6 +378,8 @@ class Restlib(object):
             basic = 'Basic %s' % encoded
             self.headers['Authorization'] = basic
 
+        print "NEW RESTLIB object"
+
     def _decode_list(self, data):
         rv = []
         for item in data:
