@@ -525,7 +525,7 @@ class Restlib(object):
     def validateResponse(self, response, request_type=None, handler=None):
 
         # FIXME: what are we supposed to do with a 204?
-        if str(response['status']) not in ["200", "204"]:
+        if str(response['status']) not in ["200", "202", "204"]:
             parsed = {}
             if not response.get('content'):
                 parsed = {}
@@ -989,16 +989,20 @@ class UEPConnection:
         method = '/consumers/%s/certificates/serials' % self.sanitize(consumerId)
         return self.conn.request_get(method)
 
-    def bindByEntitlementPool(self, consumerId, poolId, quantity=None):
+    def bindByEntitlementPool(self, consumerId, poolId, quantity=None, async=False):
         """
          Subscribe consumer to a subscription by pool ID.
         """
         method = "/consumers/%s/entitlements?pool=%s" % (self.sanitize(consumerId), self.sanitize(poolId))
         if quantity:
             method = "%s&quantity=%s" % (method, quantity)
+        if async:
+            method = "%s&async=true" % (method)
+
+        print "method", method
         return self.conn.request_post(method)
 
-    def bindByProduct(self, consumerId, products):
+    def bindByProduct(self, consumerId, products, async=False):
         """
         Subscribe consumer directly to one or more products by their ID.
         This will cause the UEP to look for one or more pools which provide
@@ -1007,9 +1011,11 @@ class UEPConnection:
         args = "&".join(["product=" + product.replace(" ", "%20")
                         for product in products])
         method = "/consumers/%s/entitlements?%s" % (str(consumerId), args)
+        if async:
+            method = "%s&async=true" % method
         return self.conn.request_post(method)
 
-    def bind(self, consumerId, entitle_date=None):
+    def bind(self, consumerId, entitle_date=None, async=False):
         """
         Same as bindByProduct, but assume the server has a list of the
         system's products. This is useful for autosubscribe. Note that this is
@@ -1022,6 +1028,8 @@ class UEPConnection:
         if entitle_date:
             method = "%s?entitle_date=%s" % (method,
                     self.sanitize(entitle_date.isoformat(), plus=True))
+        if async:
+            method = "%s?async=true" % (method)
 
         return self.conn.request_post(method)
 
@@ -1218,6 +1226,14 @@ class UEPConnection:
         List the subscriptions for a particular owner.
         """
         method = "/owners/%s/subscriptions" % self.sanitize(owner_key)
+        results = self.conn.request_get(method)
+        return results
+
+    def getJob(self, job_id):
+        """
+        Returns the status of a candlepin job.
+        """
+        method = "/jobs/%s" % job_id
         results = self.conn.request_get(method)
         return results
 

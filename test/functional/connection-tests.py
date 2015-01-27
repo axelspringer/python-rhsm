@@ -16,6 +16,7 @@
 import os
 import random
 import string
+import time
 import unittest
 
 from nose.plugins.attrib import attr
@@ -147,7 +148,7 @@ class BindRequestTests(unittest.TestCase):
         consumerInfo = self.cp.registerConsumer("test-consumer", "system", owner="admin")
         self.consumer_uuid = consumerInfo['uuid']
 
-    @patch.object(Restlib,'validateResponse')
+    @patch.object(Restlib, 'validateResponse')
     @patch('rhsm.connection.drift_check', return_value=False)
     @patch('M2Crypto.httpslib.HTTPSConnection', auto_spec=True)
     def test_bind_no_args(self, mock_conn, mock_drift, mock_validate):
@@ -162,7 +163,7 @@ class BindRequestTests(unittest.TestCase):
             if name == '().request':
                 self.assertEquals(None, kwargs['body'])
 
-    @patch.object(Restlib,'validateResponse')
+    @patch.object(Restlib, 'validateResponse')
     @patch('rhsm.connection.drift_check', return_value=False)
     @patch('M2Crypto.httpslib.HTTPSConnection', auto_spec=True)
     def test_bind_by_pool(self, mock_conn, mock_drift, mock_validate):
@@ -172,6 +173,58 @@ class BindRequestTests(unittest.TestCase):
         for (name, args, kwargs) in mock_conn.mock_calls:
             if name == '().request':
                 self.assertEquals(None, kwargs['body'])
+
+    def test_async_bind_by_pool(self):
+        # not a valid pool
+        result = self.cp.bindByEntitlementPool(self.consumer_uuid,
+                                               '123123234345345', '1', async=True)
+        print "result", result
+
+        self.assertTrue('id' in result)
+        job_id = result['id']
+
+        # try again now
+        job_status = self.cp.getJob(job_id)
+        print "job_status", job_status
+        print "status_path", job_status['statusPath']
+
+        self._wait_for_job(job_status['id'])
+
+    def test_async_bind_by_product(self):
+        test_product = "37060"
+
+        result = self.cp.bindByProduct(self.consumer_uuid,
+                                       [test_product],
+                                       async=True)
+        self.assertTrue(result is not None)
+        self.assertTrue('id' in result)
+
+        print "status_path", result['statusPath']
+
+        job_result = self._wait_for_job(result['id'])
+        print "ding! frys are done: ", job_result
+
+    def test_bind_by_product(self):
+
+        test_product = "37060"
+
+        result = self.cp.bindByProduct(self.consumer_uuid,
+                                       [test_product])
+        self.assertTrue(result is not None)
+        self.assertTrue('certificates' in result)
+
+    def _wait_for_job(self, job_id):
+        waiting = True
+        while(waiting):
+            time.sleep(5)
+            job_status = self.cp.getJob(job_id)
+
+            print "polling job_status: %s" % job_status
+            if job_status['done']:
+                print "frys are done"
+                return job_status
+
+        return None
 
 
 @attr('functional')
