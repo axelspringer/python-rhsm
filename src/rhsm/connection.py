@@ -581,6 +581,7 @@ class RhsmClientCertAuth(RhsmAuth):
     def __call__(self, r):
         super(RhsmClientCertAuth, self).__call__(r)
         r.cert = (self.cert_file, self.key_file)
+        return r
 
 
 class RhsmEntitlementCertAuth(RhsmAuth):
